@@ -423,7 +423,7 @@ impl AdbDevice {
         Err(anyhow!("stat error"))
     }
 
-    pub fn list(&mut self, path: &str) -> anyhow::Result<Vec<FileInfo>> {
+    pub fn list<P: AsRef<typed_path::Utf8UnixPath>>(&mut self, path: P) -> anyhow::Result<Vec<FileInfo>> {
         Ok(self
             .iter_directory(path)
             .context("Iter Directory Error")?
