@@ -64,6 +64,6 @@ impl FileInfo {
     }
 
     pub fn is_hidden(&self) -> bool {
-        self.path.starts_with('.')
+        self.path.file_name().map_or(false, |name| name.starts_with('.'))
     }
 }
