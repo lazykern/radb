@@ -33,3 +33,37 @@ pub fn parse_file_info<P: AsRef<typed_path::Utf8UnixPath>>(data: Vec<u8>, path: 
     })
 }
 
+#[cfg(feature = "file-extend")]
+impl FileInfo {
+    pub fn is_dir(&self) -> bool {
+        self.mode & 0o170000 == 0o040000
+    }
+
+    pub fn is_file(&self) -> bool {
+        self.mode & 0o170000 == 0o100000
+    }
+
+    pub fn is_symlink(&self) -> bool {
+        self.mode & 0o170000 == 0o120000
+    }
+
+    pub fn is_fifo(&self) -> bool {
+        self.mode & 0o170000 == 0o010000
+    }
+
+    pub fn is_char_device(&self) -> bool {
+        self.mode & 0o170000 == 0o020000
+    }
+
+    pub fn is_block_device(&self) -> bool {
+        self.mode & 0o170000 == 0o060000
+    }
+
+    pub fn is_socket(&self) -> bool {
+        self.mode & 0o170000 == 0o140000
+    }
+
+    pub fn is_hidden(&self) -> bool {
+        self.path.starts_with('.')
+    }
+}
