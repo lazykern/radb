@@ -1,12 +1,11 @@
 use crate::beans::AppInfo;
-use crate::beans::device_info::AdbDeviceInfo;
 use crate::beans::file_info::{parse_file_info, FileInfo};
 use crate::beans::forward_item::ForwardItem;
 use crate::beans::net_info::NetworkType;
 use crate::client::adb_connection::AdbConnection;
 use crate::connections::adb_protocol::AdbProtocolStreamHandler;
 use crate::connections::adb_socket_config::AdbSocketConfig;
-use crate::utils::{adb_path, get_free_port, init_logger};
+use crate::utils::{adb_path, get_free_port};
 use anyhow::{anyhow, Context};
 use chrono::DateTime;
 use image::{io::Reader as ImageReader, RgbImage};
@@ -18,11 +17,8 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
-use std::{fs, thread, time};
-use std::mem::size_of;
-use std::sync::{Arc, Mutex, RwLock};
-use std::thread::sleep;
-use std::time::Duration;
+use std::{fs, time};
+use std::sync::{Arc, RwLock};
 
 /// AdbDevice结构体定义了一个ADB设备的基本信息。
 #[derive(Debug)]
@@ -379,7 +375,7 @@ impl AdbDevice {
     pub fn pull(&mut self, src: &str, dest: &PathBuf) -> anyhow::Result<usize> {
         let mut size = 0;
         let mut file = match File::open(dest) {
-            Ok(mut file) => file,
+            Ok(file) => file,
             Err(_) => File::create(dest)?,
         };
         self.iter_content(src)?.for_each(|content| match content {
@@ -392,18 +388,18 @@ impl AdbDevice {
         Ok(size)
     }
 
-    pub fn iter_directory(&mut self, path: &str) -> anyhow::Result<impl Iterator<Item = FileInfo>> {
-        let mut conn = self.prepare_sync(path, "LIST")?;
+    pub fn iter_directory<P: AsRef<typed_path::Utf8UnixPath>>(&mut self, path: P) -> anyhow::Result<impl Iterator<Item = FileInfo>> {
+        let mut conn = self.prepare_sync(&path.as_ref().to_string(), "LIST")?;
         Ok(std::iter::from_fn(move || {
             let data = conn.read_string(4).ok()?;
             return if data.eq("DONE") {
                 None
             } else {
-                let mut current_data = conn.recv(16).ok()?;
+                let current_data = conn.recv(16).ok()?;
                 let name_length_bytes = &current_data[12..=15];
                 let name_length = u32::from_le_bytes(name_length_bytes.try_into().unwrap());
-                let path = conn.read_string(name_length as usize).ok()?;
-                Some(parse_file_info(current_data, path).ok()?)
+                let name = conn.read_string(name_length as usize).ok()?;
+                Some(parse_file_info(current_data, path.as_ref().join(name)).ok()?)
             };
         }))
     }
@@ -417,8 +413,8 @@ impl AdbDevice {
         }
     }
 
-    pub fn stat(&mut self, path: &str) -> anyhow::Result<FileInfo> {
-        let mut conn = self.prepare_sync(path, "STAT")?;
+    pub fn stat<P: AsRef<typed_path::Utf8UnixPath>>(&mut self, path: P) -> anyhow::Result<FileInfo> {
+        let mut conn = self.prepare_sync(&path.as_ref().to_string(), "STAT")?;
         let data = conn.read_string(4)?;
         if data.eq("STAT") {
             let current_data = conn.recv(12)?;

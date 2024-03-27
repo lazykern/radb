@@ -8,10 +8,10 @@ pub struct FileInfo {
     pub size: u32,
     pub mtime: u32,
     pub mdtime: Option<chrono::DateTime<Utc>>,
-    pub path: String,
+    pub path: typed_path::Utf8UnixPathBuf,
 }
 
-pub fn parse_file_info<T: ToString>(data: Vec<u8>, path: T) -> Result<FileInfo> {
+pub fn parse_file_info<P: AsRef<typed_path::Utf8UnixPath>>(data: Vec<u8>, path: P) -> Result<FileInfo> {
     let mode_bytes = &data[0..4];
     let size_bytes = &data[4..8];
     let mtime_bytes = &data[8..12];
@@ -24,23 +24,12 @@ pub fn parse_file_info<T: ToString>(data: Vec<u8>, path: T) -> Result<FileInfo> 
             .ok_or(anyhow!("Parse Datetime Error"))?,
     );
 
-    Ok(FileInfo::new(mode, size, mtime, mdtime, path.to_string()))
+    Ok(FileInfo {
+        mode,
+        size,
+        mtime,
+        mdtime,
+        path: path.as_ref().to_owned(),
+    })
 }
 
-impl FileInfo {
-    fn new(
-        mode: u32,
-        size: u32,
-        mtime: u32,
-        mdtime: Option<chrono::DateTime<Utc>>,
-        path: String,
-    ) -> FileInfo {
-        FileInfo {
-            mode,
-            size,
-            mtime,
-            mdtime,
-            path,
-        }
-    }
-}

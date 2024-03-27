@@ -5,12 +5,13 @@ mod test_devices{
     use std::thread;
     use std::thread::sleep;
     use std::time::Duration;
-    use chrono::{DateTime, TimeZone, Utc};
+    use chrono::{DateTime, Utc};
     use log::info;
     use radb::beans::AppInfo;
     use radb::beans::FileInfo;
     use radb::client::AdbDevice;
     use radb::utils::init_logger;
+    use typed_path::Utf8UnixPathBuf;
 
 
 
@@ -85,21 +86,21 @@ mod test_devices{
             size: 4096,
             mtime: 1675505597,
             mdtime: Some(string_to_datetime("2023-02-04T10:13:17Z")),
-            path: String::from(".."),
+            path: Utf8UnixPathBuf::from(".."),
         };
         let file_info_2 = FileInfo{
             mode: 16889,
             size: 4096,
             mtime: 1704021463,
             mdtime: Some(string_to_datetime("2023-12-31T11:17:43Z")),
-            path: String::from("."),
+            path: Utf8UnixPathBuf::from("."),
         };
         let file_info_3 = FileInfo{
             mode: 16877,
             size: 4096,
             mtime: 1710556393,
             mdtime: Some(string_to_datetime("2024-03-16T02:33:13Z")),
-            path: String::from(".studio"),
+            path: Utf8UnixPathBuf::from(".studio"),
         };
         let mut preset_file_info = vec![file_info_1, file_info_2, file_info_3];
         let mut file_info = device.iter_directory("/data/local/tmp").unwrap().collect::<Vec<FileInfo>>();
