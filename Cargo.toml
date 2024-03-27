@@ -9,6 +9,8 @@ description = "A Rust Implement Python AdbUtils"
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+file-extend = []
 
 [dependencies]
 anyhow = "1.0.77"
